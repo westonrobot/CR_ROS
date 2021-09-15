@@ -202,7 +202,7 @@ bool CR5Robot::movJ(dobot_bringup::MovJ::Request& request, dobot_bringup::MovJ::
 {
     try
     {
-        commander_->movJ(request.x, request.y, request.z, request.z, request.b, request.c);
+        commander_->movJ(request.x, request.y, request.z, request.a, request.b, request.c);
         return true;
     }
     catch (const TcpClientException& err)
@@ -216,7 +216,7 @@ bool CR5Robot::movL(dobot_bringup::MovL::Request& request, dobot_bringup::MovL::
 {
     try
     {
-        commander_->movL(request.x, request.y, request.z, request.z, request.b, request.c);
+        commander_->movL(request.x, request.y, request.z, request.a, request.b, request.c);
         return true;
     }
     catch (const TcpClientException& err)
