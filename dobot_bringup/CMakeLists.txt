@@ -51,42 +51,63 @@ add_message_files(FILES
 ## Generate services in the 'srv' folder
 add_service_files(
         FILES
+        EnableRobot.srv
+        DisableRobot.srv
+        ClearError.srv
+        ResetRobot.srv
+        SpeedFactor.srv
+        User.srv
+        Tool.srv
+        RobotMode.srv
+        PayLoad.srv
+        DO.srv
+        DOExecute.srv
+        ToolDO.srv
+        ToolDOExecute.srv
+        AO.srv
+        AOExecute.srv
+        AccJ.srv
+        AccL.srv
+        SpeedJ.srv
+        SpeedL.srv
+        Arch.srv
+        Arch.srv
+        CP.srv
+        LimZ.srv
+        SetArmOrientation.srv
+        PowerOn.srv
+        RunScript.srv
+        StopScript.srv
+        PauseScript.srv
+        ContinueScript.srv
+        #GetHoldRegs.srv
+        #SetHoldRegs.srv
+        SetSafeSkin.srv
+        SetObstacleAvoid.srv
+        #GetTraceStartPose.srv
+        #GetPathStartPose.srv
+        #PositiveSolution.srv
+        SetCollisionLevel.srv
+        EmergencyStop.srv
+
+
+
         JointMovJ.srv
         MovJ.srv
         MovL.srv
+        Jump.srv
         RelMovJ.srv
         RelMovL.srv
+        #MovLIO
+        #MovJIO
+        Arc.srv
+        Circle.srv
         ServoJ.srv
         ServoP.srv
-        AccJ.srv
-        AccL.srv
-        AO.srv
-        AOExecute.srv
-        Arch.srv
-        ClearError.srv
-        ContinueScript.srv
-        CP.srv
-        DisableRobot.srv
-        DO.srv
-        DOExecute.srv
-        EnableRobot.srv
-        GetHoldRegs.srv
-        Limz.srv
-        PauseScript.srv
-        PayLoad.srv
-        PowerOn.srv
-        ResetRobot.srv
-        RunScript.srv
-        SetArmOrientation.srv
-        SetHoldRegs.srv
-        SpeedFactor.srv
-        SpeedJ.srv
-        SpeedL.srv
-        StopScript.srv
-        Tool.srv
-        ToolDO.srv
-        ToolDOExecute.srv
-        User.srv
+        Sync.srv
+        StartTrace.srv
+        StartPath.srv
+        StartFCTrace.srv
         MoveJog.srv
 )
 
