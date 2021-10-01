@@ -44,8 +44,8 @@
 #include <dobot_bringup/StopScript.h>
 #include <dobot_bringup/PauseScript.h>
 #include <dobot_bringup/ContinueScript.h>
-#include <dobot_bringup/GetHoldRegs.h>
-#include <dobot_bringup/SetHoldRegs.h>
+//#include <dobot_bringup/GetHoldRegs.h>
+//#include <dobot_bringup/SetHoldRegs.h>
 #include <dobot_bringup/SetSafeSkin.h>
 #include <dobot_bringup/SetObstacleAvoid.h>
 
