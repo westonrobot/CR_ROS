@@ -83,7 +83,6 @@ void CR5Robot::init()
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/ServoJ", &CR5Robot::servoJ, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/ServoP", &CR5Robot::servoP, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/Sync", &CR5Robot::sync, this));
-    server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/ServoP", &CR5Robot::servoP, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/StartTrace", &CR5Robot::startTrace, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/StartPath", &CR5Robot::startPath, this));
     server_tbl_.push_back(
