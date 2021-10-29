@@ -3,7 +3,7 @@
 # 1. 源码编译
 ## ubuntu16.04
 ### 下载源码
-```
+```sh
 cd $HOME/catkin_ws/src
 
 git clone https://github.com/Dobot-Arm/CR5_ROS.git -b kinetic-devel
@@ -11,17 +11,13 @@ git clone https://github.com/Dobot-Arm/CR5_ROS.git -b kinetic-devel
 cd $HOME/catkin_ws
 ```
 ### 编译
-```
+```sh
 catkin_make
-```
-### 设置环境变量
-```
-source $HOME/catkin_ws/devel/setup.bash
 ```
 
 ## ubuntu18.04
 ###下载源码
-```
+```sh
 cd $HOME/catkin_ws/src
 
 git clone https://github.com/Dobot-Arm/CR5_ROS.git -b melodic-devel
@@ -29,24 +25,22 @@ git clone https://github.com/Dobot-Arm/CR5_ROS.git -b melodic-devel
 cd $HOME/catkin_ws
 ```
 ### 编译
-```
+```sh
 catkin_make
-```
-### 设置环境变量
-```
-source $HOME/catkin_ws/devel/setup.bash
 ```
 
 # 2. 设置机器人类型
 ### 若为 CR5 机械臂，则使用如下命令设置机械臂类型
-```
+```sh
 echo "export DOBOT_TYPE=cr5" >> ~/.bashrc
 source ~/.bashrc
+source $HOME/catkin_ws/devel/setup.bash
 ```
 ### 若为 CR3 机械臂，则使用如下命令设置机械臂类型
-```
+```sh
 echo "export DOBOT_TYPE=cr3" >> ~/.bashrc
 source ~/.bashrc
+source $HOME/catkin_ws/devel/setup.bash
 ```
 
 # 3. 示例演示
@@ -55,7 +49,7 @@ source ~/.bashrc
 
 1. ## rviz 显示
 
-    ```
+    ```sh
     roslaunch dobot_description display.launch
     ```
 
@@ -66,7 +60,7 @@ source ~/.bashrc
 
 2. ## moveit 控制
     * 使用如下命令启动 moveit
-    ```
+    ```sh
     roslaunch dobot_moveit demo.launch
     ```
     * 鼠标将关节拖到任意的角度，点击 "Plan and Execute" 即可看到运行效果
@@ -77,12 +71,12 @@ source ~/.bashrc
 ## 4. 控制真实机械臂
 
 * **使用如下命令连接机械臂, robot_ip 为实际机械臂所对应的IP地址**
-    ```
+    ```sh
     roslaunch dobot_bringup bringup.launch robot_ip:=192.168.5.1
     ```
 
 * **使用如下命令启动 Moveit**
-    ```
+    ```sh
     roslaunch dobot_moveit moveit.launch
     ```
 
