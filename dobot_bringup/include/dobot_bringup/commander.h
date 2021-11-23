@@ -126,11 +126,8 @@ public:
             {
                 if (dash_board_tcp_->isConnect() && real_time_tcp_->isConnect())
                 {
-                    if (real_time_tcp_->tcpRecv(&real_time_data_, sizeof(real_time_data_), 5000))
+                    if (real_time_tcp_->tcpRecv(&real_time_data_, sizeof(real_time_data_), 100))
                     {
-                        if (real_time_data_.len != 1440)
-                            continue;
-
                         mutex_.lock();
                         for (uint32_t i = 0; i < 6; i++)
                             current_joint_[i] = deg2Rad(real_time_data_.q_actual[i]);

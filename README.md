@@ -5,46 +5,58 @@ Chinese version of the README -> please [click here](./README-CN.md)
 # Building
 ## ubuntu16.04
 
-### Use git to clone the source code
-```sh
+```
 cd $HOME/catkin_ws/src
 
 git clone https://github.com/Dobot-Arm/CR5_ROS.git -b kinetic-devel
 
 cd $HOME/catkin_ws
-```
 
 # building
-```sh
 catkin_make
+
+# activate this workspace
+source $HOME/catkin_ws/devel/setup.bash
 ```
 
 ## ubuntu18.04
 
 ### Use git to clone the source code
-```sh
+```
 cd $HOME/catkin_ws/src
 git clone https://github.com/Dobot-Arm/CR5_ROS.git -b melodic-devel
 cd $HOME/catkin_ws
 ```
 
 ### building
-```sh
+```
 catkin_make
 ```
 
-# set the dobot type
-### If you use CR5 robot， please type the fllow commands
-```sh
-echo "export DOBOT_TYPE=cr5" >> ~/.bashrc
-source ~/.bashrc
+### activate this workspace
+```
 source $HOME/catkin_ws/devel/setup.bash
 ```
+# set the dobot type
 ### If you use CR3 robot， please type the fllow commands
-```sh
+```
 echo "export DOBOT_TYPE=cr3" >> ~/.bashrc
 source ~/.bashrc
-source $HOME/catkin_ws/devel/setup.bash
+```
+### If you use CR5 robot， please type the fllow commands
+```
+echo "export DOBOT_TYPE=cr5" >> ~/.bashrc
+source ~/.bashrc
+```
+### If you use CR10 robot， please type the fllow commands
+```
+echo "export DOBOT_TYPE=cr10" >> ~/.bashrc
+source ~/.bashrc
+```
+### If you use CR16 robot， please type the fllow commands
+```
+echo "export DOBOT_TYPE=cr16" >> ~/.bashrc
+source ~/.bashrc
 ```
 
 # Example Demonstration
@@ -53,7 +65,7 @@ source $HOME/catkin_ws/devel/setup.bash
 
 1. ## rviz display
 
-    ```sh
+    ```
     roslaunch dobot_description display.launch
     ```
 
@@ -64,7 +76,7 @@ source $HOME/catkin_ws/devel/setup.bash
 
 2. ## moveit control
     * Active moveit by the following commands
-    ```sh
+    ```
     roslaunch dobot_moveit demo.launch
     ```
     * Drag the joint to any direction, then click "Plan and Excute" to see the result
@@ -75,12 +87,12 @@ source $HOME/catkin_ws/devel/setup.bash
 ## Controlling real robotic arm
 
 * **Connect the robotic arm with following command, and robot_ip is the IP address that the real arm locates**
-    ```sh
+    ```
     roslaunch dobot_bringup bringup.launch robot_ip:=192.168.5.1
     ```
 
 * **Active Moveit with following command**
-    ```sh
+    ```
     roslaunch dobot_moveit moveit.launch
     ```
 
