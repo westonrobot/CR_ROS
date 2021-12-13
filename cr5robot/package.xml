@@ -6,7 +6,7 @@
 
     <maintainer email="zhangran@tdobot.cc">zhangran</maintainer>
 
-    <license>BSD</license>
+    <license>MIT</license>
     <buildtool_depend>catkin</buildtool_depend>
 
     <exec_depend>dobot_bringup</exec_depend>

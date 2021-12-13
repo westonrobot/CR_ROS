@@ -5,7 +5,7 @@
     <description>The rviz_dobot_control package</description>
     <maintainer email="zhangran@dobot.cc">zhangran</maintainer>
 
-    <license>BSD</license>
+    <license>MIT</license>
 
 
     <buildtool_depend>catkin</buildtool_depend>

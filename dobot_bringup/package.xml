@@ -5,7 +5,7 @@
     <description>The cr_bringup package</description>
     <maintainer email="zhangran@dobot.cc">zhangran</maintainer>
 
-    <license>BSD</license>
+    <license>MIT</license>
 
 
     <depend>std_msgs</depend>
