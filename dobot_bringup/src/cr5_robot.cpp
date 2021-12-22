@@ -943,10 +943,21 @@ bool CR5Robot::sync(dobot_bringup::Sync::Request& request, dobot_bringup::Sync::
 {
     try
     {
+        char result[50];
         const char* cmd = "Sync()";
-        commander_->realSendCmd(cmd, strlen(cmd));
-        response.res = 0;
-        return true;
+        commander_->dashSendCmd(cmd, strlen(cmd));
+        memset(result, 0, sizeof(result));
+        if (commander_->dashRecvCmd(result, strlen("done"), 50000) && strcmp(result, "done") != 0)
+        {
+            ROS_ERROR("sync execute failed");
+            response.res = -1;
+            return false;
+        }
+        else
+        {
+            response.res = 0;
+            return true;
+        }
     }
     catch (const TcpClientException& err)
     {

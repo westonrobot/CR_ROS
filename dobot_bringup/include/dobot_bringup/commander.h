@@ -282,12 +282,17 @@ public:
         real_time_tcp_->tcpSend(cmd, strlen(cmd));
     }
 
-    void dashSendCmd(const char*cmd, uint32_t len)
+    void dashSendCmd(const char* cmd, uint32_t len)
     {
         dash_board_tcp_->tcpSend(cmd, strlen(cmd));
     }
 
-    void realSendCmd(const char*cmd, uint32_t len)
+    bool dashRecvCmd(char* cmd, uint32_t len, uint32_t timeout)
+    {
+        return dash_board_tcp_->tcpRecv(cmd, len, timeout);
+    }
+
+    void realSendCmd(const char* cmd, uint32_t len)
     {
         real_time_tcp_->tcpSend(cmd, strlen(cmd));
     }
