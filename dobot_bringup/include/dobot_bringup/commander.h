@@ -289,7 +289,17 @@ public:
 
     bool dashRecvCmd(char* cmd, uint32_t len, uint32_t timeout)
     {
-        return dash_board_tcp_->tcpRecv(cmd, len, timeout);
+        uint32_t recv_cnt = 0;
+        while (recv_cnt < len)
+        {
+            if (!dash_board_tcp_->tcpRecv(cmd + recv_cnt, 1, timeout))
+                return false;
+            if (cmd[recv_cnt] == ';')
+                return true;
+            recv_cnt++;
+        }
+
+        return false;
     }
 
     void realSendCmd(const char* cmd, uint32_t len)

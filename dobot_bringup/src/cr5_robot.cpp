@@ -51,7 +51,8 @@ void CR5Robot::init()
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/DO", &CR5Robot::DO, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/DOExecute", &CR5Robot::DOExecute, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/ToolDO", &CR5Robot::toolDO, this));
-    server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/ToolDOExecute", &CR5Robot::toolDOExecute, this));
+    server_tbl_.push_back(
+        control_nh_.advertiseService("/dobot_bringup/srv/ToolDOExecute", &CR5Robot::toolDOExecute, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/AO", &CR5Robot::AO, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/AOExecute", &CR5Robot::AOExecute, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/AccJ", &CR5Robot::accJ, this));
@@ -61,16 +62,21 @@ void CR5Robot::init()
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/Arch", &CR5Robot::arch, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/CP", &CR5Robot::cp, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/LimZ", &CR5Robot::limZ, this));
-    server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/SetArmOrientation", &CR5Robot::setArmOrientation, this));
+    server_tbl_.push_back(
+        control_nh_.advertiseService("/dobot_bringup/srv/SetArmOrientation", &CR5Robot::setArmOrientation, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/PowerOn", &CR5Robot::powerOn, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/RunScript", &CR5Robot::runScript, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/StopScript", &CR5Robot::stopScript, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/PauseScript", &CR5Robot::pauseScript, this));
-    server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/ContinueScript", &CR5Robot::continueScript, this));
+    server_tbl_.push_back(
+        control_nh_.advertiseService("/dobot_bringup/srv/ContinueScript", &CR5Robot::continueScript, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/SetSafeSkin", &CR5Robot::setSafeSkin, this));
-    server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/SetObstacleAvoid", &CR5Robot::setObstacleAvoid, this));
-    server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/SetCollisionLevel", &CR5Robot::setCollisionLevel, this));
-    server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/EmergencyStop", &CR5Robot::emergencyStop, this));
+    server_tbl_.push_back(
+        control_nh_.advertiseService("/dobot_bringup/srv/SetObstacleAvoid", &CR5Robot::setObstacleAvoid, this));
+    server_tbl_.push_back(
+        control_nh_.advertiseService("/dobot_bringup/srv/SetCollisionLevel", &CR5Robot::setCollisionLevel, this));
+    server_tbl_.push_back(
+        control_nh_.advertiseService("/dobot_bringup/srv/EmergencyStop", &CR5Robot::emergencyStop, this));
 
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/MovJ", &CR5Robot::movJ, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/MovL", &CR5Robot::movL, this));
@@ -319,9 +325,44 @@ bool CR5Robot::robotMode(dobot_bringup::RobotMode::Request& request, dobot_bring
 {
     try
     {
-        const char *cmd = "RobotMode()";
+        const char* cmd = "RobotMode()";
+        char result[10];
         commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+
+        if (commander_->dashRecvCmd(result, sizeof(result), 100))
+        {
+            char *start_pos, *end_pos;
+
+            // ErrorId,{Mode},RobotMode(), The result string format, we will get Mode value
+            start_pos = strstr(result, "{");
+            end_pos = strstr(result, "}");
+            if (start_pos != nullptr && end_pos != nullptr && start_pos < end_pos)
+            {
+                char* end_ptr;
+                *end_pos = 0;
+                int mode = (int)strtol(start_pos + 1, &end_ptr, 10);
+                if (*end_ptr != 0)
+                {
+                    response.mode = mode;
+                    response.res = 0;
+                }
+                else
+                {
+                    ROS_ERROR("Invalid result data : %s", result);
+                }
+            }
+            else
+            {
+                ROS_ERROR("Invalid result data : %s", result);
+            }
+        }
+        else
+        {
+            ROS_ERROR("RobotMode() : Recv timeout");
+            response.mode = -1;
+            response.res = -1;
+        }
+
         return true;
     }
     catch (const TcpClientException& err)
@@ -404,7 +445,8 @@ bool CR5Robot::toolDO(dobot_bringup::ToolDO::Request& request, dobot_bringup::To
     }
 }
 
-bool CR5Robot::toolDOExecute(dobot_bringup::ToolDOExecute::Request& request, dobot_bringup::ToolDOExecute::Response& response)
+bool CR5Robot::toolDOExecute(dobot_bringup::ToolDOExecute::Request& request,
+                             dobot_bringup::ToolDOExecute::Response& response)
 {
     try
     {
@@ -584,7 +626,8 @@ bool CR5Robot::limZ(dobot_bringup::LimZ::Request& request, dobot_bringup::LimZ::
     }
 }
 
-bool CR5Robot::setArmOrientation(dobot_bringup::SetArmOrientation::Request& request, dobot_bringup::SetArmOrientation::Response& response)
+bool CR5Robot::setArmOrientation(dobot_bringup::SetArmOrientation::Request& request,
+                                 dobot_bringup::SetArmOrientation::Response& response)
 {
     try
     {
@@ -641,7 +684,7 @@ bool CR5Robot::stopScript(dobot_bringup::StopScript::Request& request, dobot_bri
 {
     try
     {
-        const char *cmd = "StopScript()";
+        const char* cmd = "StopScript()";
         commander_->dashSendCmd(cmd, strlen(cmd));
         response.res = 0;
         return true;
@@ -658,7 +701,7 @@ bool CR5Robot::pauseScript(dobot_bringup::PauseScript::Request& request, dobot_b
 {
     try
     {
-        const char *cmd = "PauseScript()";
+        const char* cmd = "PauseScript()";
         commander_->dashSendCmd(cmd, strlen(cmd));
         response.res = 0;
         return true;
@@ -671,11 +714,12 @@ bool CR5Robot::pauseScript(dobot_bringup::PauseScript::Request& request, dobot_b
     }
 }
 
-bool CR5Robot::continueScript(dobot_bringup::ContinueScript::Request& request, dobot_bringup::ContinueScript::Response& response)
+bool CR5Robot::continueScript(dobot_bringup::ContinueScript::Request& request,
+                              dobot_bringup::ContinueScript::Response& response)
 {
     try
     {
-        const char *cmd = "ContinueScript()";
+        const char* cmd = "ContinueScript()";
         commander_->dashSendCmd(cmd, strlen(cmd));
         response.res = 0;
         return true;
@@ -706,7 +750,8 @@ bool CR5Robot::setSafeSkin(dobot_bringup::SetSafeSkin::Request& request, dobot_b
     }
 }
 
-bool CR5Robot::setObstacleAvoid(dobot_bringup::SetObstacleAvoid::Request& request, dobot_bringup::SetObstacleAvoid::Response& response)
+bool CR5Robot::setObstacleAvoid(dobot_bringup::SetObstacleAvoid::Request& request,
+                                dobot_bringup::SetObstacleAvoid::Response& response)
 {
     try
     {
@@ -724,7 +769,8 @@ bool CR5Robot::setObstacleAvoid(dobot_bringup::SetObstacleAvoid::Request& reques
     }
 }
 
-bool CR5Robot::setCollisionLevel(dobot_bringup::SetCollisionLevel::Request& request, dobot_bringup::SetCollisionLevel::Response& response)
+bool CR5Robot::setCollisionLevel(dobot_bringup::SetCollisionLevel::Request& request,
+                                 dobot_bringup::SetCollisionLevel::Response& response)
 {
     try
     {
@@ -742,7 +788,8 @@ bool CR5Robot::setCollisionLevel(dobot_bringup::SetCollisionLevel::Request& requ
     }
 }
 
-bool CR5Robot::emergencyStop(dobot_bringup::EmergencyStop::Request& request, dobot_bringup::EmergencyStop::Response& response)
+bool CR5Robot::emergencyStop(dobot_bringup::EmergencyStop::Request& request,
+                             dobot_bringup::EmergencyStop::Response& response)
 {
     try
     {
@@ -759,7 +806,6 @@ bool CR5Robot::emergencyStop(dobot_bringup::EmergencyStop::Request& request, dob
         return false;
     }
 }
-
 
 /*
  *----------------------------------------------------------------------------------------------------------------------
@@ -947,7 +993,7 @@ bool CR5Robot::sync(dobot_bringup::Sync::Request& request, dobot_bringup::Sync::
         const char* cmd = "Sync()";
         commander_->dashSendCmd(cmd, strlen(cmd));
         memset(result, 0, sizeof(result));
-        if (commander_->dashRecvCmd(result, strlen("done"), 50000) && strcmp(result, "done") != 0)
+        if (commander_->dashRecvCmd(result, sizeof(result), 50000) && strstr(result, "done") != nullptr)
         {
             ROS_ERROR("sync execute failed");
             response.res = -1;
@@ -1037,4 +1083,3 @@ bool CR5Robot::moveJog(dobot_bringup::MoveJog::Request& request, dobot_bringup::
         return false;
     }
 }
-
