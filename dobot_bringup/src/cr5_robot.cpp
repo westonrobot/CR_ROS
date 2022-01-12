@@ -95,6 +95,10 @@ void CR5Robot::init()
         control_nh_.advertiseService("/dobot_bringup/srv/StartFCTrace", &CR5Robot::startFCTrace, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/MoveJog", &CR5Robot::moveJog, this));
 
+    server_tbl_.push_back(
+        control_nh_.advertiseService("/dobot_bringup/srv/ModbusCreate", &CR5Robot::modbusCreate, this));
+    server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/SetHoldRegs", &CR5Robot::setHoldRegs, this));
+
     registerGoalCallback(boost::bind(&CR5Robot::goalHandle, this, _1));
     registerCancelCallback(boost::bind(&CR5Robot::cancelHandle, this, _1));
     start();
@@ -325,47 +329,26 @@ bool CR5Robot::robotMode(dobot_bringup::RobotMode::Request& request, dobot_bring
 {
     try
     {
+        uint32_t has_read;
         const char* cmd = "RobotMode()";
         char result[100];
+        memset(result, 0, sizeof(result));
         commander_->dashSendCmd(cmd, strlen(cmd));
+        commander_->dashRecvCmd(result, sizeof(result), has_read, 100);
+        if (has_read == 0)
+            throw std::logic_error("Haven't recv any result");
 
-        if (commander_->dashRecvCmd(result, sizeof(result), 100))
-        {
-            char *start_pos, *end_pos;
-
-            // ErrorId,{Mode},RobotMode(), The result string format, we will get Mode value
-            start_pos = strstr(result, "{");
-            end_pos = strstr(result, "}");
-            if (start_pos != nullptr && end_pos != nullptr && start_pos < end_pos)
-            {
-                char* end_ptr;
-                *end_pos = 0;
-                int mode = (int)strtol(start_pos + 1, &end_ptr, 10);
-                if (*end_ptr == 0)
-                {
-                    response.mode = mode;
-                    response.res = 0;
-                }
-                else
-                {
-                    ROS_ERROR("Invalid result data : %s", result);
-                }
-            }
-            else
-            {
-                ROS_ERROR("Invalid result data : %s", result);
-            }
-        }
-        else
-        {
-            ROS_ERROR("RobotMode() : Recv timeout");
-            response.mode = -1;
-            response.res = -1;
-        }
-
+        response.mode = str2Int(result);
+        response.res = 0;
         return true;
     }
     catch (const TcpClientException& err)
+    {
+        ROS_ERROR("%s", err.what());
+        response.res = -1;
+        return false;
+    }
+    catch (const std::exception& err)
     {
         ROS_ERROR("%s", err.what());
         response.res = -1;
@@ -714,6 +697,86 @@ bool CR5Robot::pauseScript(dobot_bringup::PauseScript::Request& request, dobot_b
     }
 }
 
+bool CR5Robot::modbusCreate(dobot_bringup::ModbusCreate::Request& request,
+                            dobot_bringup::ModbusCreate::Response& response)
+{
+    try
+    {
+        char cmd[300];
+        char result[100];
+        snprintf(cmd, sizeof(cmd), "ModbusCreate(%s,%d,%d,%d)", request.ip.c_str(), request.port, request.slave_id,
+                 request.is_rtu);
+        cmd[sizeof(cmd) - 1] = 0;
+        uint32_t has_read;
+        memset(result, 0, sizeof(result));
+        commander_->dashSendCmd(cmd, strlen(cmd));
+        commander_->dashRecvCmd(result, sizeof(result), has_read, 300);
+
+        if (has_read == 0)
+            throw std::logic_error("Haven't recv any result");
+
+        char* pos = strstr(result, ",");
+        if (pos == nullptr)
+            throw std::logic_error(std::string("Invalid value : ") + result);
+
+        char *errno_str, *index_str;
+        errno_str = result;
+        index_str = pos + 1;
+        *pos = 0;
+
+        response.res = str2Int(errno_str);
+        response.res = str2Int(index_str);
+        return true;
+    }
+    catch (const TcpClientException& err)
+    {
+        ROS_ERROR("%s", err.what());
+        response.res = -1;
+        response.index = -1;
+        return false;
+    }
+    catch (const std::exception& err)
+    {
+        ROS_ERROR("%s", err.what());
+        response.res = -1;
+        response.index = -1;
+        return false;
+    }
+}
+
+bool CR5Robot::setHoldRegs(dobot_bringup::SetHoldRegs::Request& request, dobot_bringup::SetHoldRegs::Response& response)
+{
+    try
+    {
+        char cmd[200];
+        char result[100];
+        snprintf(cmd, sizeof(cmd), "SetHoldRegs(%d,%d,%d,%s,%s)", request.index, request.addr, request.count,
+                 request.regs.c_str(), request.type.c_str());
+        commander_->dashSendCmd(cmd, strlen(cmd));
+
+        memset(result, 0, sizeof(result));
+        uint32_t has_read;
+        commander_->dashRecvCmd(result, sizeof(result), has_read, 300);
+        if (has_read == 0)
+            throw std::logic_error("Haven't recv any result");
+
+        response.res = str2Int(result);
+        return true;
+    }
+    catch (const TcpClientException& err)
+    {
+        ROS_ERROR("%s", err.what());
+        response.res = -1;
+        return false;
+    }
+    catch (const std::exception& err)
+    {
+        ROS_ERROR("%s", err.what());
+        response.res = -1;
+        return false;
+    }
+}
+
 bool CR5Robot::continueScript(dobot_bringup::ContinueScript::Request& request,
                               dobot_bringup::ContinueScript::Response& response)
 {
@@ -993,7 +1056,8 @@ bool CR5Robot::sync(dobot_bringup::Sync::Request& request, dobot_bringup::Sync::
         const char* cmd = "Sync()";
         commander_->dashSendCmd(cmd, strlen(cmd));
         memset(result, 0, sizeof(result));
-        if (commander_->dashRecvCmd(result, sizeof(result), 50000) && strstr(result, "done") != nullptr)
+        uint32_t has_read;
+        if (commander_->dashRecvCmd(result, sizeof(result), has_read, 50000) && strstr(result, "done") != nullptr)
         {
             ROS_ERROR("sync execute failed");
             response.res = -1;
@@ -1082,4 +1146,13 @@ bool CR5Robot::moveJog(dobot_bringup::MoveJog::Request& request, dobot_bringup::
         response.res = -1;
         return false;
     }
+}
+
+int CR5Robot::str2Int(const char* val)
+{
+    char* err;
+    int mode = (int)strtol(val, &err, 10);
+    if (*err != 0)
+        throw std::logic_error(std::string("Invalid value : ") + val);
+    return mode;
 }

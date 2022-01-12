@@ -74,6 +74,7 @@ add_service_files(
         Arch.srv
         CP.srv
         LimZ.srv
+        ModbusCreate.srv
         SetArmOrientation.srv
         PowerOn.srv
         RunScript.srv
@@ -81,7 +82,7 @@ add_service_files(
         PauseScript.srv
         ContinueScript.srv
         #GetHoldRegs.srv
-        #SetHoldRegs.srv
+        SetHoldRegs.srv
         SetSafeSkin.srv
         SetObstacleAvoid.srv
         #GetTraceStartPose.srv

@@ -71,6 +71,8 @@
 #include <dobot_bringup/RelMovL.h>
 #include <dobot_bringup/JointMovJ.h>
 #include <dobot_bringup/RobotStatus.h>
+#include <dobot_bringup/ModbusCreate.h>
+#include <dobot_bringup/SetHoldRegs.h>
 
 
 
@@ -164,7 +166,8 @@ protected:
     bool pauseScript(dobot_bringup::PauseScript::Request& request, dobot_bringup::PauseScript::Response& response);
     bool continueScript(dobot_bringup::ContinueScript::Request& request, dobot_bringup::ContinueScript::Response& response);
 //    bool getHoldRegs(dobot_bringup::SpeedFactor::Request& request, dobot_bringup::SpeedFactor::Response& response);
-//    bool setHoldRegs(dobot_bringup::SpeedFactor::Request& request, dobot_bringup::SpeedFactor::Response& response);
+    bool modbusCreate(dobot_bringup::ModbusCreate::Request& request, dobot_bringup::ModbusCreate::Response& response);
+    bool setHoldRegs(dobot_bringup::SetHoldRegs::Request& request, dobot_bringup::SetHoldRegs::Response& response);
     bool setSafeSkin(dobot_bringup::SetSafeSkin::Request& request, dobot_bringup::SetSafeSkin::Response& response);
     bool setObstacleAvoid(dobot_bringup::SetObstacleAvoid::Request& request, dobot_bringup::SetObstacleAvoid::Response& response);
 //    bool getTraceStartPose(dobot_bringup::SpeedFactor::Request& request, dobot_bringup::SpeedFactor::Response& response);
@@ -197,6 +200,8 @@ protected:
     bool moveJog(dobot_bringup::MoveJog::Request& request, dobot_bringup::MoveJog::Response& response);
 
 private:
+    static int str2Int(const char* val);
+
     void feedbackHandle(const ros::TimerEvent& tm,
                         actionlib::ActionServer<FollowJointTrajectoryAction>::GoalHandle handle);
     void moveHandle(const ros::TimerEvent& tm, actionlib::ActionServer<FollowJointTrajectoryAction>::GoalHandle handle);
