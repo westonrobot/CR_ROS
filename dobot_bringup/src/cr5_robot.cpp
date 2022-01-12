@@ -326,7 +326,7 @@ bool CR5Robot::robotMode(dobot_bringup::RobotMode::Request& request, dobot_bring
     try
     {
         const char* cmd = "RobotMode()";
-        char result[10];
+        char result[100];
         commander_->dashSendCmd(cmd, strlen(cmd));
 
         if (commander_->dashRecvCmd(result, sizeof(result), 100))
@@ -341,7 +341,7 @@ bool CR5Robot::robotMode(dobot_bringup::RobotMode::Request& request, dobot_bring
                 char* end_ptr;
                 *end_pos = 0;
                 int mode = (int)strtol(start_pos + 1, &end_ptr, 10);
-                if (*end_ptr != 0)
+                if (*end_ptr == 0)
                 {
                     response.mode = mode;
                     response.res = 0;

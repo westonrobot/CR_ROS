@@ -9,9 +9,6 @@
  ***********************************************************************************************************************
  */
 
-#pragma clang diagnostic push
-
-#pragma ide diagnostic ignored "OCUnusedGlobalDeclarationInspection"
 #pragma once
 
 #include <vector>
@@ -122,9 +119,9 @@ public:
     {
         while (is_running_)
         {
-            try
+            if (real_time_tcp_->isConnect())
             {
-                if (dash_board_tcp_->isConnect() && real_time_tcp_->isConnect())
+                try
                 {
                     if (real_time_tcp_->tcpRecv(&real_time_data_, sizeof(real_time_data_), 5000))
                     {
@@ -143,24 +140,36 @@ public:
                         //                        ROS_WARN("tcp recv timeout");
                     }
                 }
-                else
+                catch (const TcpClientException& err)
                 {
-                    try
-                    {
-                        real_time_tcp_->connect();
-                        dash_board_tcp_->connect();
-                    }
-                    catch (const TcpClientException& err)
-                    {
-                        ROS_ERROR("tcp recv error : %s", err.what());
-                        sleep(3);
-                    }
+                    real_time_tcp_->disConnect();
+                    ROS_ERROR("tcp recv error : %s", err.what());
                 }
             }
-            catch (const TcpClientException& err)
+            else
             {
-                dash_board_tcp_->disConnect();
-                ROS_ERROR("tcp recv error : %s", err.what());
+                try
+                {
+                    real_time_tcp_->connect();
+                }
+                catch (const TcpClientException& err)
+                {
+                    ROS_ERROR("tcp recv error : %s", err.what());
+                    sleep(3);
+                }
+            }
+
+            if (!dash_board_tcp_->isConnect())
+            {
+                try
+                {
+                    dash_board_tcp_->connect();
+                }
+                catch (const TcpClientException& err)
+                {
+                    ROS_ERROR("tcp recv error : %s", err.what());
+                    sleep(3);
+                }
             }
         }
     }
@@ -318,5 +327,3 @@ private:
         return deg * PI / 180.0;
     }
 };
-
-#pragma clang diagnostic pop

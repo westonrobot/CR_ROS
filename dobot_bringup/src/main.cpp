@@ -41,7 +41,8 @@ int main(int argc, char* argv[])
         ros::Publisher tool_vector_pub =
             private_node.advertise<dobot_bringup::ToolVectorActual>("/dobot_bringup/msg/ToolVectorActual", 100);
         string z ="/";
-        string a = getenv("DOBOT_TYPE");
+        const char* robot_type = getenv("DOBOT_TYPE");
+        string a = robot_type == nullptr ? "cr5" : robot_type;
         string b = "_robot/joint_controller/follow_joint_trajectory";
         string ss =  z + a+ b ;
         for (uint32_t i = 0; i < 6; i++)
