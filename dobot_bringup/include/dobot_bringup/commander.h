@@ -146,19 +146,19 @@ public:
                 }
                 catch (const TcpClientException& err)
                 {
-                    move_cmd_tcp_->disConnect();
-                    ROS_ERROR("tcp recv error : %s", err.what());
+                    real_time_tcp_->disConnect();
+                    ROS_ERROR("real time tcp recv error : %s", err.what());
                 }
             }
             else
             {
                 try
                 {
-                    move_cmd_tcp_->connect();
+                    real_time_tcp_->connect();
                 }
                 catch (const TcpClientException& err)
                 {
-                    ROS_ERROR("tcp recv error : %s", err.what());
+                    ROS_ERROR("move cmd tcp recv error : %s", err.what());
                     sleep(3);
                 }
             }
@@ -171,7 +171,7 @@ public:
                 }
                 catch (const TcpClientException& err)
                 {
-                    ROS_ERROR("tcp recv error : %s", err.what());
+                    ROS_ERROR("dash tcp recv error : %s", err.what());
                     sleep(3);
                 }
             }

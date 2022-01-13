@@ -337,6 +337,7 @@ bool CR5Robot::robotMode(dobot_bringup::RobotMode::Request& request, dobot_bring
         commander_->dashRecvCmd(result, sizeof(result), has_read, 100);
         if (has_read == 0)
             throw std::logic_error("Haven't recv any result");
+        ROS_INFO("RobotMode recv : %s", result);
 
         response.mode = str2Int(result);
         response.res = 0;
@@ -725,7 +726,7 @@ bool CR5Robot::modbusCreate(dobot_bringup::ModbusCreate::Request& request,
         *pos = 0;
 
         response.res = str2Int(errno_str);
-        response.res = str2Int(index_str);
+        response.index = str2Int(index_str);
         return true;
     }
     catch (const TcpClientException& err)
