@@ -217,24 +217,28 @@ public:
     void enableRobot()
     {
         const char* cmd = "EnableRobot()";
+        flushDashRecv();
         dash_board_tcp_->tcpSend(cmd, strlen(cmd));
     }
 
     void disableRobot()
     {
         const char* cmd = "DisableRobot()";
+        flushDashRecv();
         dash_board_tcp_->tcpSend(cmd, strlen(cmd));
     }
 
     void clearError()
     {
         const char* cmd = "ClearError()";
+        flushDashRecv();
         dash_board_tcp_->tcpSend(cmd, strlen(cmd));
     }
 
     void resetRobot()
     {
         const char* cmd = "ResetRobot()";
+        flushDashRecv();
         dash_board_tcp_->tcpSend(cmd, strlen(cmd));
     }
 
@@ -242,6 +246,7 @@ public:
     {
         char cmd[100];
         sprintf(cmd, "SpeedFactor(%d)", ratio);
+        flushDashRecv();
         dash_board_tcp_->tcpSend(cmd, strlen(cmd));
     }
 
@@ -310,7 +315,15 @@ public:
 
     void dashSendCmd(const char* cmd, uint32_t len)
     {
+        flushDashRecv();
         dash_board_tcp_->tcpSend(cmd, strlen(cmd));
+    }
+
+    void flushDashRecv()
+    {
+        char buf[1024];
+        uint32_t has_read;
+        dash_board_tcp_->tcpRecv(buf, sizeof(buf), has_read, 10);
     }
 
     bool dashRecvCmd(char* cmd, uint32_t len, uint32_t& has_read, uint32_t timeout)
