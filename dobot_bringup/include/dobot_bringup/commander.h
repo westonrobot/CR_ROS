@@ -64,7 +64,7 @@ struct RealTimeData
     double motor_temperatures[6];    // 0864 ~ 0911  //
     double joint_modes[6];           // 0912 ~ 0959  //
     double v_actual[6];              // 960  ~ 1007  //
-    double dummy[9][6];              //               // 1008 ~ 1439  //
+    double dummy[9][6];              // 1008 ~ 1439  //
 };
 #pragma pack(pop)
 
@@ -83,7 +83,7 @@ private:
     RealTimeData real_time_data_;
     std::atomic<bool> is_running_;
     std::unique_ptr<std::thread> thread_;
-    std::shared_ptr<TcpClient> move_cmd_tcp_;
+    std::shared_ptr<TcpClient> motion_cmd_tcp_;
     std::shared_ptr<TcpClient> real_time_tcp_;
     std::shared_ptr<TcpClient> dash_board_tcp_;
 
@@ -91,8 +91,7 @@ public:
     explicit CR5Commander(const std::string& ip)
         : current_joint_{}, tool_vector_{}, real_time_data_{}, is_running_(false)
     {
-        is_running_ = false;
-        move_cmd_tcp_ = std::make_shared<TcpClient>(ip, 30003);
+        motion_cmd_tcp_ = std::make_shared<TcpClient>(ip, 30003);
         real_time_tcp_ = std::make_shared<TcpClient>(ip, 30004);
         dash_board_tcp_ = std::make_shared<TcpClient>(ip, 29999);
     }
@@ -176,11 +175,11 @@ public:
                 }
             }
 
-            if (!move_cmd_tcp_->isConnect())
+            if (!motion_cmd_tcp_->isConnect())
             {
                 try
                 {
-                    move_cmd_tcp_->connect();
+                    motion_cmd_tcp_->connect();
                 }
                 catch (const TcpClientException& err)
                 {
@@ -211,132 +210,94 @@ public:
 
     bool isConnected() const
     {
-        return dash_board_tcp_->isConnect() && move_cmd_tcp_->isConnect();
+        return dash_board_tcp_->isConnect() && motion_cmd_tcp_->isConnect();
     }
 
-    void enableRobot()
+    void dashboardDoCmd(const char* cmd, int32_t& err_id, std::vector<std::string>& result)
     {
-        const char* cmd = "EnableRobot()";
-        flushDashRecv();
-        dash_board_tcp_->tcpSend(cmd, strlen(cmd));
+        tcpDoCmd(dash_board_tcp_, cmd, err_id, result);
     }
 
-    void disableRobot()
+    void motionDoCmd(const char* cmd, int32_t& err_id, std::vector<std::string>& result)
     {
-        const char* cmd = "DisableRobot()";
-        flushDashRecv();
-        dash_board_tcp_->tcpSend(cmd, strlen(cmd));
+        tcpDoCmd(motion_cmd_tcp_, cmd, err_id, result);
     }
 
-    void clearError()
+    static void parseString(const std::string& str, const std::string& send_cmd, int32_t& err,
+                            std::vector<std::string>& result)
     {
-        const char* cmd = "ClearError()";
-        flushDashRecv();
-        dash_board_tcp_->tcpSend(cmd, strlen(cmd));
-    }
+        if (str.find(send_cmd) == std::string::npos)
+            throw std::logic_error(std::string("Invalid string : ") + str);
 
-    void resetRobot()
-    {
-        const char* cmd = "ResetRobot()";
-        flushDashRecv();
-        dash_board_tcp_->tcpSend(cmd, strlen(cmd));
-    }
+        std::size_t pos = str.find(',');
+        if (pos == std::string::npos)
+            throw std::logic_error(std::string("Has no ',' found : ") + str);
 
-    void speedFactor(int ratio)
-    {
-        char cmd[100];
-        sprintf(cmd, "SpeedFactor(%d)", ratio);
-        flushDashRecv();
-        dash_board_tcp_->tcpSend(cmd, strlen(cmd));
-    }
+        // parse err id
+        char buf[200];
+        assert(pos < sizeof(buf));
+        str.copy(buf, pos, 0);
+        buf[pos] = 0;
 
-    /*
-     *------------------------------------------------------------------------------------------------------------------
-     *
-     *------------------------------------------------------------------------------------------------------------------
-     */
+        char* end;
+        err = (int32_t)strtol(buf, &end, 10);
+        if (*end != '\0')
+            throw std::logic_error(std::string("Invalid err id: ") + str);
 
-    void movJ(double x, double y, double z, double a, double b, double c)
-    {
-        char cmd[100];
-        sprintf(cmd, "MovJ(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", x, y, z, a, b, c);
-        move_cmd_tcp_->tcpSend(cmd, strlen(cmd));
-    }
+        // parse result
+        std::size_t start_pos = str.find('{');
+        if (start_pos == std::string::npos)
+            throw std::logic_error(std::string("Has no '{': ") + str);
+        std::size_t end_pos = str.find('}');
+        if (end_pos == std::string::npos)
+            throw std::logic_error(std::string("Has no '}': ") + str);
 
-    void movL(double x, double y, double z, double a, double b, double c)
-    {
-        char cmd[100];
-        sprintf(cmd, "MovL(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", x, y, z, a, b, c);
-        move_cmd_tcp_->tcpSend(cmd, strlen(cmd));
-    }
+        assert(end_pos > start_pos);
+        char* buf_str = new char[str.length() + 1];
+        str.copy(buf_str, end_pos - start_pos - 1, start_pos + 1);
 
-    void jointMovJ(double j1, double j2, double j3, double j4, double j5, double j6)
-    {
-        char cmd[100];
-        sprintf(cmd, "JointMovJ(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", j1, j2, j3, j4, j5, j6);
-        move_cmd_tcp_->tcpSend(cmd, strlen(cmd));
-    }
+        std::stringstream ss;
+        ss << buf_str;
+        delete[] buf_str;
 
-    void moveJog(const std::string& axis)
-    {
-        char cmd[100];
-        sprintf(cmd, "MoveJog(%s)", axis.c_str());
-        move_cmd_tcp_->tcpSend(cmd, strlen(cmd));
-    }
-
-    void relMovJ(double offset1, double offset2, double offset3, double offset4, double offset5, double offset6)
-    {
-        char cmd[100];
-        sprintf(cmd, "RelMovJ(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", offset1, offset2, offset3, offset4, offset5,
-                offset6);
-        move_cmd_tcp_->tcpSend(cmd, strlen(cmd));
-    }
-
-    void relMovL(double x, double y, double z)
-    {
-        char cmd[100];
-        sprintf(cmd, "RelMovL(%0.3f,%0.3f,%0.3f)", x, y, z);
-        move_cmd_tcp_->tcpSend(cmd, strlen(cmd));
-    }
-
-    void servoJ(double j1, double j2, double j3, double j4, double j5, double j6)
-    {
-        char cmd[100];
-        sprintf(cmd, "ServoJ(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", j1, j2, j3, j4, j5, j6);
-        move_cmd_tcp_->tcpSend(cmd, strlen(cmd));
-    }
-
-    void servoP(double x, double y, double z, double a, double b, double c)
-    {
-        char cmd[100];
-        sprintf(cmd, "ServoP(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", x, y, z, a, b, c);
-        move_cmd_tcp_->tcpSend(cmd, strlen(cmd));
-    }
-
-    void dashSendCmd(const char* cmd, uint32_t len)
-    {
-        flushDashRecv();
-        dash_board_tcp_->tcpSend(cmd, strlen(cmd));
-    }
-
-    void flushDashRecv()
-    {
-        char buf[1024];
-        uint32_t has_read;
-        dash_board_tcp_->tcpRecv(buf, sizeof(buf), has_read, 10);
-    }
-
-    bool dashRecvCmd(char* cmd, uint32_t len, uint32_t& has_read, uint32_t timeout)
-    {
-        return dash_board_tcp_->tcpRecv(cmd, len, has_read, timeout);
-    }
-
-    void realSendCmd(const char* cmd, uint32_t len)
-    {
-        move_cmd_tcp_->tcpSend(cmd, strlen(cmd));
+        while (ss.getline(buf, sizeof(buf), ','))
+            result.emplace_back(buf);
     }
 
 private:
+    static void tcpDoCmd(std::shared_ptr<TcpClient>& tcp, const char* cmd, int32_t& err_id, std::vector<std::string>& result)
+    {
+        try
+        {
+            uint32_t has_read;
+            char buf[1024];
+            memset(buf, 0, sizeof(buf));
+            tcp->tcpSend(cmd, strlen(cmd));
+
+            char* recv_ptr = buf;
+
+            while (true)
+            {
+                bool err = tcp->tcpRecv(recv_ptr, sizeof(buf), has_read, 3000);
+                if (!err)
+                {
+                    ROS_ERROR("tcpDoCmd : recv timeout");
+                    return;
+                }
+
+                if (*recv_ptr == ';')
+                    break;
+                recv_ptr++;
+            }
+
+            parseString(buf, cmd, err_id, result);
+        }
+        catch (const std::logic_error& err)
+        {
+            ROS_ERROR("tcpDoCmd failed : %s", err.what());
+        }
+    }
+
     static inline double rad2Deg(double rad)
     {
         return rad * 180.0 / PI;
