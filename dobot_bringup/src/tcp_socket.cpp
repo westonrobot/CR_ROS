@@ -82,8 +82,6 @@ void TcpClient::tcpSend(const void* buf, uint32_t len)
     if (!is_connected_)
         throw TcpClientException("tcp is disconnected");
 
-    ROS_INFO("send : %s", (const char*)buf);
-
     const auto* tmp = (const uint8_t*)buf;
     while (len)
     {
@@ -104,15 +102,24 @@ bool TcpClient::tcpRecv(void* buf, uint32_t len, uint32_t& has_read, uint32_t ti
 
     fd_set read_fds;
     timeval tv = { 0, 0 };
+    timeval* tp;
+    if (timeout)
+    {
+        tv.tv_sec = timeout / 1000;
+        tv.tv_usec = (timeout % 1000) * 1000;
+        tp = &tv;
+    }
+    else
+    {
+        tp = nullptr;
+    }
     has_read = 0;
     while (len)
     {
         FD_ZERO(&read_fds);
         FD_SET(fd_, &read_fds);
 
-        tv.tv_sec = timeout / 1000;
-        tv.tv_usec = (timeout % 1000) * 1000;
-        int err = ::select(fd_ + 1, &read_fds, nullptr, nullptr, &tv);
+        int err = ::select(fd_ + 1, &read_fds, nullptr, nullptr, tp);
         if (err < 0)
         {
             disConnect();

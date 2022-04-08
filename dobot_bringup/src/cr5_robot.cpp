@@ -136,7 +136,14 @@ void CR5Robot::moveHandle(const ros::TimerEvent& tm,
             tmp[i] = point[i] * 180.0 / 3.1415926;
         }
 
-        commander_->servoJ(tmp[0], tmp[1], tmp[2], tmp[3], tmp[4], tmp[5]);
+        dobot_bringup::ServoJ srv;
+        srv.request.j1 = tmp[0];
+        srv.request.j2 = tmp[1];
+        srv.request.j3 = tmp[2];
+        srv.request.j4 = tmp[3];
+        srv.request.j5 = tmp[4];
+        srv.request.j6 = tmp[5];
+        servoJ(srv.request, srv.response);
         index_++;
     }
     else
@@ -210,13 +217,12 @@ bool CR5Robot::enableRobot(dobot_bringup::EnableRobot::Request& request, dobot_b
 {
     try
     {
-        commander_->enableRobot();
-        response.res = 0;
+        const char* cmd = "EnableRobot()";
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const std::exception& err)
     {
-        commander_->clearError();
         response.res = -1;
         return false;
     }
@@ -227,13 +233,12 @@ bool CR5Robot::disableRobot(dobot_bringup::DisableRobot::Request& request,
 {
     try
     {
-        commander_->disableRobot();
-        response.res = 0;
+        const char* cmd = "DisableRobot()";
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const std::exception& err)
     {
-        commander_->clearError();
         response.res = -1;
         return false;
     }
@@ -243,13 +248,13 @@ bool CR5Robot::clearError(dobot_bringup::ClearError::Request& request, dobot_bri
 {
     try
     {
-        commander_->clearError();
+        const char* cmd = "ClearError()";
+        commander_->dashboardDoCmd(cmd, response.res);
         response.res = 0;
         return true;
     }
     catch (const std::exception& err)
     {
-        commander_->clearError();
         response.res = -1;
         return false;
     }
@@ -259,8 +264,8 @@ bool CR5Robot::resetRobot(dobot_bringup::ResetRobot::Request& request, dobot_bri
 {
     try
     {
-        commander_->resetRobot();
-        response.res = 0;
+        const char* cmd = "ResetRobot()";
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -277,8 +282,7 @@ bool CR5Robot::speedFactor(dobot_bringup::SpeedFactor::Request& request, dobot_b
     {
         char cmd[100];
         sprintf(cmd, "SpeedFactor(%d)", request.ratio);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -295,8 +299,7 @@ bool CR5Robot::user(dobot_bringup::User::Request& request, dobot_bringup::User::
     {
         char cmd[100];
         sprintf(cmd, "User(%d)", request.index);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -313,8 +316,7 @@ bool CR5Robot::tool(dobot_bringup::Tool::Request& request, dobot_bringup::Tool::
     {
         char cmd[100];
         sprintf(cmd, "Tool(%d)", request.index);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -329,17 +331,14 @@ bool CR5Robot::robotMode(dobot_bringup::RobotMode::Request& request, dobot_bring
 {
     try
     {
-        uint32_t has_read;
         const char* cmd = "RobotMode()";
-        char result[100];
-        memset(result, 0, sizeof(result));
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        commander_->dashRecvCmd(result, sizeof(result), has_read, 100);
-        if (has_read == 0)
-            throw std::logic_error("Haven't recv any result");
-        ROS_INFO("RobotMode recv : %s", result);
 
-        response.mode = str2Int(result);
+        std::vector<std::string> result;
+        commander_->dashboardDoCmd(cmd, response.res, result);
+        if (result.empty())
+            throw std::logic_error("robotMode : Empty string");
+
+        response.mode = str2Int(result[0].c_str());
         response.res = 0;
         return true;
     }
@@ -363,8 +362,7 @@ bool CR5Robot::payload(dobot_bringup::PayLoad::Request& request, dobot_bringup::
     {
         char cmd[100];
         sprintf(cmd, "PayLoad(%0.3f, %0.3f)", request.weight, request.inertia);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -381,8 +379,7 @@ bool CR5Robot::DO(dobot_bringup::DO::Request& request, dobot_bringup::DO::Respon
     {
         char cmd[100];
         sprintf(cmd, "DO(%d, %d)", request.index, request.status);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -399,8 +396,7 @@ bool CR5Robot::DOExecute(dobot_bringup::DOExecute::Request& request, dobot_bring
     {
         char cmd[100];
         sprintf(cmd, "DO(%d, %d)", request.index, request.status);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -417,8 +413,7 @@ bool CR5Robot::toolDO(dobot_bringup::ToolDO::Request& request, dobot_bringup::To
     {
         char cmd[100];
         sprintf(cmd, "ToolDO(%d, %d)", request.index, request.status);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -436,8 +431,7 @@ bool CR5Robot::toolDOExecute(dobot_bringup::ToolDOExecute::Request& request,
     {
         char cmd[100];
         sprintf(cmd, "ToolDOExecute(%d, %d)", request.index, request.status);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -454,8 +448,7 @@ bool CR5Robot::AO(dobot_bringup::AO::Request& request, dobot_bringup::AO::Respon
     {
         char cmd[100];
         sprintf(cmd, "AO(%d, %d)", request.index, request.status);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -472,8 +465,7 @@ bool CR5Robot::AOExecute(dobot_bringup::AOExecute::Request& request, dobot_bring
     {
         char cmd[100];
         sprintf(cmd, "AO(%d, %0.3f)", request.index, static_cast<float>(request.value));
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -490,8 +482,7 @@ bool CR5Robot::accJ(dobot_bringup::AccJ::Request& request, dobot_bringup::AccJ::
     {
         char cmd[100];
         sprintf(cmd, "AccJ(%d)", request.r);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -508,8 +499,7 @@ bool CR5Robot::accL(dobot_bringup::AccL::Request& request, dobot_bringup::AccL::
     {
         char cmd[100];
         sprintf(cmd, "AccL(%d)", request.r);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -526,8 +516,7 @@ bool CR5Robot::speedJ(dobot_bringup::SpeedJ::Request& request, dobot_bringup::Sp
     {
         char cmd[100];
         sprintf(cmd, "SpeedJ(%d)", request.r);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -544,8 +533,7 @@ bool CR5Robot::speedL(dobot_bringup::SpeedL::Request& request, dobot_bringup::Sp
     {
         char cmd[100];
         sprintf(cmd, "SpeedL(%d)", request.r);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -562,8 +550,7 @@ bool CR5Robot::arch(dobot_bringup::Arch::Request& request, dobot_bringup::Arch::
     {
         char cmd[100];
         sprintf(cmd, "Arch(%d)", request.index);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -580,8 +567,7 @@ bool CR5Robot::cp(dobot_bringup::CP::Request& request, dobot_bringup::CP::Respon
     {
         char cmd[100];
         sprintf(cmd, "CP(%d)", request.r);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -598,8 +584,7 @@ bool CR5Robot::limZ(dobot_bringup::LimZ::Request& request, dobot_bringup::LimZ::
     {
         char cmd[100];
         sprintf(cmd, "LimZ(%d)", request.value);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -617,8 +602,7 @@ bool CR5Robot::setArmOrientation(dobot_bringup::SetArmOrientation::Request& requ
     {
         char cmd[100];
         sprintf(cmd, "SetArmOrientation(%d,%d,%d,%d)", request.LorR, request.UorD, request.ForN, request.Config6);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -634,8 +618,7 @@ bool CR5Robot::powerOn(dobot_bringup::PowerOn::Request& request, dobot_bringup::
     try
     {
         const char* cmd = "PowerOn()";
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -652,8 +635,7 @@ bool CR5Robot::runScript(dobot_bringup::RunScript::Request& request, dobot_bring
     {
         char cmd[100];
         sprintf(cmd, "RunScript(%s)", request.projectName.c_str());
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -669,8 +651,7 @@ bool CR5Robot::stopScript(dobot_bringup::StopScript::Request& request, dobot_bri
     try
     {
         const char* cmd = "StopScript()";
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -686,8 +667,7 @@ bool CR5Robot::pauseScript(dobot_bringup::PauseScript::Request& request, dobot_b
     try
     {
         const char* cmd = "PauseScript()";
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -704,29 +684,16 @@ bool CR5Robot::modbusCreate(dobot_bringup::ModbusCreate::Request& request,
     try
     {
         char cmd[300];
-        char result[100];
+        std::vector<std::string> result;
         snprintf(cmd, sizeof(cmd), "ModbusCreate(%s,%d,%d,%d)", request.ip.c_str(), request.port, request.slave_id,
                  request.is_rtu);
         cmd[sizeof(cmd) - 1] = 0;
-        uint32_t has_read;
-        memset(result, 0, sizeof(result));
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        commander_->dashRecvCmd(result, sizeof(result), has_read, 300);
-
-        if (has_read == 0)
+        commander_->dashboardDoCmd(cmd, response.res, result);
+        if (result.size() != 2)
             throw std::logic_error("Haven't recv any result");
 
-        char* pos = strstr(result, ",");
-        if (pos == nullptr)
-            throw std::logic_error(std::string("Invalid value : ") + result);
-
-        char *errno_str, *index_str;
-        errno_str = result;
-        index_str = pos + 1;
-        *pos = 0;
-
-        response.res = str2Int(errno_str);
-        response.index = str2Int(index_str);
+        response.res = str2Int(result[0].c_str());
+        response.index = str2Int(result[1].c_str());
         return true;
     }
     catch (const TcpClientException& err)
@@ -750,18 +717,14 @@ bool CR5Robot::setHoldRegs(dobot_bringup::SetHoldRegs::Request& request, dobot_b
     try
     {
         char cmd[200];
-        char result[100];
+        std::vector<std::string> result;
         snprintf(cmd, sizeof(cmd), "SetHoldRegs(%d,%d,%d,%s,%s)", request.index, request.addr, request.count,
                  request.regs.c_str(), request.type.c_str());
-        commander_->dashSendCmd(cmd, strlen(cmd));
-
-        memset(result, 0, sizeof(result));
-        uint32_t has_read;
-        commander_->dashRecvCmd(result, sizeof(result), has_read, 300);
-        if (has_read == 0)
+        commander_->dashboardDoCmd(cmd, response.res, result);
+        if (result.empty())
             throw std::logic_error("Haven't recv any result");
 
-        response.res = str2Int(result);
+        response.res = str2Int(result[0].c_str());
         return true;
     }
     catch (const TcpClientException& err)
@@ -784,8 +747,7 @@ bool CR5Robot::continueScript(dobot_bringup::ContinueScript::Request& request,
     try
     {
         const char* cmd = "ContinueScript()";
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -802,8 +764,7 @@ bool CR5Robot::setSafeSkin(dobot_bringup::SetSafeSkin::Request& request, dobot_b
     {
         char cmd[100];
         sprintf(cmd, "SetSafeSkin(%d)", request.status);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -821,8 +782,7 @@ bool CR5Robot::setObstacleAvoid(dobot_bringup::SetObstacleAvoid::Request& reques
     {
         char cmd[100];
         sprintf(cmd, "SetObstacleAvoid(%d)", request.status);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -840,8 +800,7 @@ bool CR5Robot::setCollisionLevel(dobot_bringup::SetCollisionLevel::Request& requ
     {
         char cmd[100];
         sprintf(cmd, "SetCollisionLevel(%d)", request.level);
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -859,8 +818,24 @@ bool CR5Robot::emergencyStop(dobot_bringup::EmergencyStop::Request& request,
     {
         char cmd[100];
         sprintf(cmd, "EmergencyStop()");
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->dashboardDoCmd(cmd, response.res);
+        return true;
+    }
+    catch (const TcpClientException& err)
+    {
+        ROS_ERROR("%s", err.what());
+        response.res = -1;
+        return false;
+    }
+}
+
+bool CR5Robot::sync(dobot_bringup::Sync::Request& request, dobot_bringup::Sync::Response& response)
+{
+    try
+    {
+        char result[50];
+        const char* cmd = "Sync()";
+        commander_->dashboardDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -881,8 +856,10 @@ bool CR5Robot::movJ(dobot_bringup::MovJ::Request& request, dobot_bringup::MovJ::
 {
     try
     {
-        commander_->movJ(request.x, request.y, request.z, request.a, request.b, request.c);
-        response.res = 0;
+        char cmd[100];
+        sprintf(cmd, "MovJ(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", request.x, request.y, request.z, request.a, request.b,
+                request.c);
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -897,8 +874,10 @@ bool CR5Robot::movL(dobot_bringup::MovL::Request& request, dobot_bringup::MovL::
 {
     try
     {
-        commander_->movL(request.x, request.y, request.z, request.a, request.b, request.c);
-        response.res = 0;
+        char cmd[100];
+        sprintf(cmd, "MovL(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", request.x, request.y, request.z, request.a, request.b,
+                request.c);
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -913,7 +892,10 @@ bool CR5Robot::servoJ(dobot_bringup::ServoJ::Request& request, dobot_bringup::Se
 {
     try
     {
-        commander_->servoJ(request.j1, request.j2, request.j3, request.j4, request.j5, request.j6);
+        char cmd[100];
+        sprintf(cmd, "ServoJ(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", request.j1, request.j2, request.j3, request.j4,
+                request.j5, request.j6);
+        commander_->motionDoCmd(cmd, response.res);
         response.res = 0;
         return true;
     }
@@ -932,8 +914,7 @@ bool CR5Robot::jump(dobot_bringup::Jump::Request& request, dobot_bringup::Jump::
         char cmd[100];
         sprintf(cmd, "Jump(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", request.offset1, request.offset2, request.offset3,
                 request.offset4, request.offset5, request.offset6);
-        commander_->realSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -952,8 +933,7 @@ bool CR5Robot::arc(dobot_bringup::Arc::Request& request, dobot_bringup::Arc::Res
         sprintf(cmd, "Arc(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", request.x1,
                 request.y1, request.z1, request.rx1, request.ry1, request.rz1, request.x2, request.y2, request.z2,
                 request.rx2, request.ry2, request.rz2);
-        commander_->realSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -972,8 +952,7 @@ bool CR5Robot::circle(dobot_bringup::Circle::Request& request, dobot_bringup::Ci
         sprintf(cmd, "Circle(%d, %0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)",
                 request.count, request.x1, request.y1, request.z1, request.rx1, request.ry1, request.rz1, request.x2,
                 request.y2, request.z2, request.rx2, request.ry2, request.rz2);
-        commander_->realSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -988,8 +967,10 @@ bool CR5Robot::servoP(dobot_bringup::ServoP::Request& request, dobot_bringup::Se
 {
     try
     {
-        commander_->servoP(request.x, request.y, request.z, request.a, request.b, request.c);
-        response.res = 0;
+        char cmd[100];
+        sprintf(cmd, "ServoP(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", request.x, request.y, request.z, request.a,
+                request.b, request.c);
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -1004,9 +985,10 @@ bool CR5Robot::relMovJ(dobot_bringup::RelMovJ::Request& request, dobot_bringup::
 {
     try
     {
-        commander_->relMovJ(request.offset1, request.offset2, request.offset3, request.offset4, request.offset5,
-                            request.offset6);
-        response.res = 0;
+        char cmd[100];
+        sprintf(cmd, "RelMovJ(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", request.offset1, request.offset2, request.offset3,
+                request.offset4, request.offset5, request.offset6);
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -1021,8 +1003,9 @@ bool CR5Robot::relMovL(dobot_bringup::RelMovL::Request& request, dobot_bringup::
 {
     try
     {
-        commander_->relMovL(request.x, request.y, request.z);
-        response.res = 0;
+        char cmd[100];
+        sprintf(cmd, "RelMovL(%0.3f,%0.3f,%0.3f)", request.x, request.y, request.z);
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -1037,38 +1020,11 @@ bool CR5Robot::jointMovJ(dobot_bringup::JointMovJ::Request& request, dobot_bring
 {
     try
     {
-        commander_->jointMovJ(request.j1, request.j2, request.j3, request.j4, request.j5, request.j6);
-        response.res = 0;
+        char cmd[100];
+        sprintf(cmd, "JointMovJ(%0.3f,%0.3f,%0.3f,%0.3f,%0.3f,%0.3f)", request.j1, request.j2, request.j3, request.j4,
+                request.j5, request.j6);
+        commander_->motionDoCmd(cmd, response.res);
         return true;
-    }
-    catch (const TcpClientException& err)
-    {
-        ROS_ERROR("%s", err.what());
-        response.res = -1;
-        return false;
-    }
-}
-
-bool CR5Robot::sync(dobot_bringup::Sync::Request& request, dobot_bringup::Sync::Response& response)
-{
-    try
-    {
-        char result[50];
-        const char* cmd = "Sync()";
-        commander_->dashSendCmd(cmd, strlen(cmd));
-        memset(result, 0, sizeof(result));
-        uint32_t has_read;
-        if (commander_->dashRecvCmd(result, sizeof(result), has_read, 50000) && strstr(result, "done") != nullptr)
-        {
-            ROS_ERROR("sync execute failed");
-            response.res = -1;
-            return false;
-        }
-        else
-        {
-            response.res = 0;
-            return true;
-        }
     }
     catch (const TcpClientException& err)
     {
@@ -1084,8 +1040,7 @@ bool CR5Robot::startTrace(dobot_bringup::StartTrace::Request& request, dobot_bri
     {
         char cmd[100];
         sprintf(cmd, "StartTrace(%s)", request.trace_name.c_str());
-        commander_->realSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -1102,8 +1057,7 @@ bool CR5Robot::startPath(dobot_bringup::StartPath::Request& request, dobot_bring
     {
         char cmd[100];
         sprintf(cmd, "StartPath(%s,%d,%d)", request.trace_name.c_str(), request.const_val, request.cart);
-        commander_->realSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -1121,8 +1075,7 @@ bool CR5Robot::startFCTrace(dobot_bringup::StartFCTrace::Request& request,
     {
         char cmd[100];
         sprintf(cmd, "StartFCTrace(%s)", request.trace_name.c_str());
-        commander_->realSendCmd(cmd, strlen(cmd));
-        response.res = 0;
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)
@@ -1137,8 +1090,9 @@ bool CR5Robot::moveJog(dobot_bringup::MoveJog::Request& request, dobot_bringup::
 {
     try
     {
-        commander_->moveJog(request.axisID);
-        response.res = 0;
+        char cmd[100];
+        sprintf(cmd, "MoveJog(%s)", request.axisID.c_str());
+        commander_->motionDoCmd(cmd, response.res);
         return true;
     }
     catch (const TcpClientException& err)

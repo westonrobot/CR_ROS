@@ -69,7 +69,7 @@ struct RealTimeData
 #pragma pack(pop)
 
 /**
- * URCommander
+ * CR5Commander
  */
 class CR5Commander
 {
@@ -213,9 +213,21 @@ public:
         return dash_board_tcp_->isConnect() && motion_cmd_tcp_->isConnect();
     }
 
+    void dashboardDoCmd(const char* cmd, int32_t& err_id)
+    {
+        std::vector<std::string> result;
+        tcpDoCmd(dash_board_tcp_, cmd, err_id, result);
+    }
+
     void dashboardDoCmd(const char* cmd, int32_t& err_id, std::vector<std::string>& result)
     {
         tcpDoCmd(dash_board_tcp_, cmd, err_id, result);
+    }
+
+    void motionDoCmd(const char* cmd, int32_t& err_id)
+    {
+        std::vector<std::string> result;
+        tcpDoCmd(motion_cmd_tcp_, cmd, err_id, result);
     }
 
     void motionDoCmd(const char* cmd, int32_t& err_id, std::vector<std::string>& result)
@@ -265,20 +277,23 @@ public:
     }
 
 private:
-    static void tcpDoCmd(std::shared_ptr<TcpClient>& tcp, const char* cmd, int32_t& err_id, std::vector<std::string>& result)
+    static void tcpDoCmd(std::shared_ptr<TcpClient>& tcp, const char* cmd, int32_t& err_id,
+                         std::vector<std::string>& result)
     {
         try
         {
             uint32_t has_read;
             char buf[1024];
             memset(buf, 0, sizeof(buf));
+
+            ROS_INFO("tcp send cmd : %s", cmd);
             tcp->tcpSend(cmd, strlen(cmd));
 
             char* recv_ptr = buf;
 
             while (true)
             {
-                bool err = tcp->tcpRecv(recv_ptr, sizeof(buf), has_read, 3000);
+                bool err = tcp->tcpRecv(recv_ptr, 1, has_read, 0);
                 if (!err)
                 {
                     ROS_ERROR("tcpDoCmd : recv timeout");
@@ -290,6 +305,7 @@ private:
                 recv_ptr++;
             }
 
+            ROS_INFO("tcp recv cmd : %s", buf);
             parseString(buf, cmd, err_id, result);
         }
         catch (const std::logic_error& err)
