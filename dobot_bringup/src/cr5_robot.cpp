@@ -327,34 +327,20 @@ bool CR5Robot::robotMode(dobot_bringup::RobotMode::Request& request, dobot_bring
     {
         const char* cmd = "RobotMode()";
         char result[100];
+        memset(result, 0, sizeof(result));
         commander_->dashSendCmd(cmd, strlen(cmd));
 
         if (commander_->dashRecvCmd(result, sizeof(result), 100))
         {
-            char *start_pos, *end_pos;
-
-            // ErrorId,{Mode},RobotMode(), The result string format, we will get Mode value
-            start_pos = strstr(result, "{");
-            end_pos = strstr(result, "}");
-            if (start_pos != nullptr && end_pos != nullptr && start_pos < end_pos)
+            char* end_str;
+            response.mode = strtol(result, &end_str, 10);
+            if (*end_str != '\0')
             {
-                char* end_ptr;
-                *end_pos = 0;
-                int mode = (int)strtol(start_pos + 1, &end_ptr, 10);
-                if (*end_ptr == 0)
-                {
-                    response.mode = mode;
-                    response.res = 0;
-                }
-                else
-                {
-                    ROS_ERROR("Invalid result data : %s", result);
-                }
+                ROS_ERROR("RobotMode() : Invalid result : %s", result);
+                response.res = -1;
+                return false;
             }
-            else
-            {
-                ROS_ERROR("Invalid result data : %s", result);
-            }
+            response.res = 0;
         }
         else
         {

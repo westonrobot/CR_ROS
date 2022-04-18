@@ -117,13 +117,14 @@ public:
 
     void recvTask()
     {
+        uint32_t has_read;
         while (is_running_)
         {
             if (real_time_tcp_->isConnect())
             {
                 try
                 {
-                    if (real_time_tcp_->tcpRecv(&real_time_data_, sizeof(real_time_data_), 5000))
+                    if (real_time_tcp_->tcpRecv(&real_time_data_, sizeof(real_time_data_), has_read, 5000))
                     {
                         if (real_time_data_.len != 1440)
                             continue;
@@ -298,17 +299,9 @@ public:
 
     bool dashRecvCmd(char* cmd, uint32_t len, uint32_t timeout)
     {
-        uint32_t recv_cnt = 0;
-        while (recv_cnt < len)
-        {
-            if (!dash_board_tcp_->tcpRecv(cmd + recv_cnt, 1, timeout))
-                return false;
-            if (cmd[recv_cnt] == ';')
-                return true;
-            recv_cnt++;
-        }
-
-        return false;
+        uint32_t has_read;
+        dash_board_tcp_->tcpRecv(cmd, len, has_read, timeout);
+        return has_read != 0;
     }
 
     void realSendCmd(const char* cmd, uint32_t len)

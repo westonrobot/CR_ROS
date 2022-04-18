@@ -98,13 +98,14 @@ void TcpClient::tcpSend(const void* buf, uint32_t len)
     }
 }
 
-bool TcpClient::tcpRecv(void* buf, uint32_t len, uint32_t timeout)
+bool TcpClient::tcpRecv(void* buf, uint32_t len, uint32_t& has_read, uint32_t timeout)
 {
     uint8_t* tmp = (uint8_t*)buf;    // NOLINT(modernize-use-auto)
 
     fd_set read_fds;
     timeval tv = { 0, 0 };
 
+    has_read = 0;
     while (len)
     {
         FD_ZERO(&read_fds);
@@ -136,6 +137,7 @@ bool TcpClient::tcpRecv(void* buf, uint32_t len, uint32_t timeout)
         }
         len -= err;
         tmp += err;
+        has_read += err;
     }
 
     return true;
