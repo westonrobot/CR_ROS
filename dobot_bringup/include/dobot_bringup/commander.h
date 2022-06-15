@@ -210,7 +210,51 @@ public:
 
     bool isConnected() const
     {
-        return dash_board_tcp_->isConnect() && motion_cmd_tcp_->isConnect();
+        return dash_board_tcp_->isConnect() && real_time_tcp_->isConnect();
+    }
+
+    // char* modbusCreate(const std::string& ip, int port, int dev_id)
+    // {
+    //     char cmd[100];
+    //     sprintf(cmd, "ModbusCreate(%s,%d,%d,true)", ip.c_str(), port, dev_id);
+    //     // dash_board_tcp_->tcpSend(cmd, strlen(cmd));
+    //     return cmd;
+    // }
+
+    /*
+    index	int	Internal index, supporting at most five devices, range: 0~4
+    addr	int	address of the holding registers. Depending on the slave station configuration
+    count	int	number of the holding registers to read. The value ranges from 1 to 4.
+    valTab	string	number of the holding registers
+    valType	string	    U16: read 16-bit unsigned integer ( two bytes, occupy one register)
+                        U32: read 32-bit unsigned integer (four bytes, occupy two registers)
+                        F32: read 32-bit single-precision floating-point number (four bytes, occupy two registers)
+                        F64: read 64-bit double-precision floating-point number (eight bytes, occupy four registers)
+    */
+    // char* setHoldRegs(int index, int addr, int count, const std::string& valTab)
+    // {
+    //     char cmd[100];
+    //     sprintf(cmd, "SetHoldRegs(%d,%d,%d,%s)", index, addr, count, valTab.c_str());
+    //     return cmd;
+    // }
+
+    // char* setHoldRegs(int index, int addr, int count, const std::string&  valTab, const std::string& valType)
+    // {
+    //     char cmd[100];
+    //     sprintf(cmd, "SetHoldRegs(%d,%d,%d,%s,%s)", index, addr, count, valTab.c_str(), valType.c_str());
+    //     return cmd;
+    // }
+
+    void clearError()
+    {
+        const char* cmd = "ClearError()";
+        dash_board_tcp_->tcpSend(cmd, strlen(cmd));
+    }
+
+    void resetRobot()
+    {
+        const char* cmd = "ResetRobot()";
+        dash_board_tcp_->tcpSend(cmd, strlen(cmd));
     }
 
     void dashboardDoCmd(const char* cmd, int32_t& err_id)

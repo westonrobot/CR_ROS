@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<robot name="robot" 
+
+    <include filename="package://dobot_description/urdf/bunker.urdf"/>
+    <include filename="package://dobot_description/urdf/cr_5_robot.urdf"/>
+
+    <!-- taken from another xacro file. this model is created calling a macro (?)-->
+    <xacro:j2s7s300 base_parent="mount_link" /> 
+
+    <!-- not needed for me since the desired link is already named correctly -->
+    <!-- but should work like this -->
+    <joint name="dobot_to_bunker" type="fixed">
+        <origin xyz="0 0 0" rpy="0 0 0"/>
+        <parent link="dobot_base_link"/>
+        <child link="cr5_base_link"/>
+    </joint>
+</robot>

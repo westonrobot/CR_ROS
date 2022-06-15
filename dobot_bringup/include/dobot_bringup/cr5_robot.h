@@ -52,6 +52,9 @@
 #include <dobot_bringup/SetCollisionLevel.h>
 #include <dobot_bringup/EmergencyStop.h>
 
+#include <dobot_bringup/InitGripper.h>
+#include <dobot_bringup/OpenGripper.h>
+#include <dobot_bringup/CloseGripper.h>
 
 
 
@@ -180,6 +183,9 @@ protected:
 //    bool getAngle(dobot_bringup::SpeedFactor::Request& request, dobot_bringup::SpeedFactor::Response& response);
 //    bool getPose(dobot_bringup::SpeedFactor::Request& request, dobot_bringup::SpeedFactor::Response& response);
     bool emergencyStop(dobot_bringup::EmergencyStop::Request& request, dobot_bringup::EmergencyStop::Response& response);
+    bool initGripper(dobot_bringup::InitGripper::Request& request, dobot_bringup::InitGripper::Response& response);
+    bool openGripper(dobot_bringup::OpenGripper::Request& request, dobot_bringup::OpenGripper::Response& response);
+    bool closeGripper(dobot_bringup::OpenGripper::Request& request, dobot_bringup::OpenGripper::Response& response);
 
     bool movJ(dobot_bringup::MovJ::Request& request, dobot_bringup::MovJ::Response& response);
     bool movL(dobot_bringup::MovL::Request& request, dobot_bringup::MovL::Response& response);

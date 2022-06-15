@@ -30,7 +30,7 @@ CR5Robot::~CR5Robot()
 
 void CR5Robot::init()
 {
-    std::string ip = control_nh_.param<std::string>("robot_ip_address", "192.168.5.1");
+    std::string ip = control_nh_.param<std::string>("robot_ip_address", "192.168.1.6");
 
     trajectory_duration_ = control_nh_.param("trajectory_duration", 0.3);
     ROS_INFO("trajectory_duration : %0.2f", trajectory_duration_);
@@ -94,6 +94,8 @@ void CR5Robot::init()
     server_tbl_.push_back(
         control_nh_.advertiseService("/dobot_bringup/srv/StartFCTrace", &CR5Robot::startFCTrace, this));
     server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/MoveJog", &CR5Robot::moveJog, this));
+    server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/InitGripper", &CR5Robot::initGripper, this));
+    server_tbl_.push_back(control_nh_.advertiseService("/dobot_bringup/srv/OpenGripper", &CR5Robot::openGripper, this));
 
     server_tbl_.push_back(
         control_nh_.advertiseService("/dobot_bringup/srv/ModbusCreate", &CR5Robot::modbusCreate, this));
@@ -836,6 +838,65 @@ bool CR5Robot::sync(dobot_bringup::Sync::Request& request, dobot_bringup::Sync::
         char result[50];
         const char* cmd = "Sync()";
         commander_->dashboardDoCmd(cmd, response.res);
+        return true;
+    }
+    catch (const TcpClientException& err)
+    {
+        ROS_ERROR("%s", err.what());
+        response.res = -1;
+        return false;
+    }
+}
+
+bool CR5Robot::initGripper(dobot_bringup::InitGripper::Request& request, 
+                            dobot_bringup::InitGripper::Response& response) 
+{
+    try
+    {
+        char cmd[200];
+        std::vector<std::string> result;
+        snprintf(cmd, sizeof(cmd), "ModbusCreate(127.0.0.1,60000,1,1)");
+        commander_->dashboardDoCmd(cmd, response.res, result);
+        snprintf(cmd, sizeof(cmd), "SetHoldRegs(%d,%d,%d,%s,U16)", 0, 256, 1,
+                 "{165}");
+        commander_->dashboardDoCmd(cmd, response.res, result);
+        return true;
+    }
+    catch (const TcpClientException& err)
+    {
+        ROS_ERROR("%s", err.what());
+        response.res = -1;
+        return false;
+    }
+}
+
+bool CR5Robot::openGripper(dobot_bringup::OpenGripper::Request& request,
+                        dobot_bringup::OpenGripper::Response& response) 
+{
+    try
+    {
+        char cmd[200];
+        std::vector<std::string> result;
+        snprintf(cmd, sizeof(cmd), "SetHoldRegs(%d,257,3,{%d,0,%d},U16)",0,request.force,request.position);
+        commander_->dashboardDoCmd(cmd, response.res, result);
+        response.res = 0;
+        return true;
+    }
+    catch (const TcpClientException& err)
+    {
+        ROS_ERROR("%s", err.what());
+        response.res = -1;
+        return false;
+    }
+}
+
+bool CR5Robot::closeGripper(dobot_bringup::OpenGripper::Request& request, 
+                            dobot_bringup::OpenGripper::Response& response) 
+{
+    try
+    {
+        // commander_->setHoldRegs(0,1000,3,"{2304,255,65440}");
+        response.res = 0;
         return true;
     }
     catch (const TcpClientException& err)

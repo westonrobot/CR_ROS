@@ -1,0 +1,6 @@
+# force in N (0-100)
+# positon (1000%)
+int32 force
+int32 position
+---
+int32 res

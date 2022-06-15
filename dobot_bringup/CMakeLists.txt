@@ -90,8 +90,8 @@ add_service_files(
         #PositiveSolution.srv
         SetCollisionLevel.srv
         EmergencyStop.srv
-
-
+        InitGripper.srv
+        OpenGripper.srv
 
         JointMovJ.srv
         MovJ.srv
