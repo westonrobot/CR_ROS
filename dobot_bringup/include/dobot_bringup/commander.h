@@ -326,31 +326,31 @@ private:
     {
         try
         {
-            // uint32_t has_read;
-            // char buf[1024];
-            // memset(buf, 0, sizeof(buf));
+            uint32_t has_read;
+            char buf[1024];
+            memset(buf, 0, sizeof(buf));
 
             ROS_INFO("tcp send cmd : %s", cmd);
             tcp->tcpSend(cmd, strlen(cmd));
 
-            // char* recv_ptr = buf;
+            char* recv_ptr = buf;
 
-            // while (true)
-            // {
-            //     bool err = tcp->tcpRecv(recv_ptr, 1, has_read, 0);
-            //     if (!err)
-            //     {
-            //         ROS_ERROR("tcpDoCmd : recv timeout");
-            //         return;
-            //     }
+            while (true)
+            {
+                bool err = tcp->tcpRecv(recv_ptr, 1, has_read, 0);
+                if (!err)
+                {
+                    ROS_ERROR("tcpDoCmd : recv timeout");
+                    return;
+                }
 
-            //     if (*recv_ptr == ';')
-            //         break;
-            //     recv_ptr++;
-            // }
+                if (*recv_ptr == ';')
+                    break;
+                recv_ptr++;
+            }
 
-            // ROS_INFO("tcp recv cmd : %s", buf);
-            // parseString(buf, cmd, err_id, result);
+            ROS_INFO("tcp recv cmd : %s", buf);
+            parseString(buf, cmd, err_id, result);
         }
         catch (const std::logic_error& err)
         {

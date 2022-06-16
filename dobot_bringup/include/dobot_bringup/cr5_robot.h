@@ -54,7 +54,7 @@
 
 #include <dobot_bringup/InitGripper.h>
 #include <dobot_bringup/OpenGripper.h>
-#include <dobot_bringup/CloseGripper.h>
+// #include <dobot_bringup/CloseGripper.h>
 
 
 
