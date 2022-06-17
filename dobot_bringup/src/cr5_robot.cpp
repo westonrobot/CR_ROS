@@ -875,28 +875,11 @@ bool CR5Robot::openGripper(dobot_bringup::OpenGripper::Request& request,
 {
     try
     {
+        response.res = -4004;
         char cmd[200];
         std::vector<std::string> result;
         snprintf(cmd, sizeof(cmd), "SetHoldRegs(%d,257,3,{%d,0,%d},U16)",0,request.force,request.position);
         commander_->dashboardDoCmd(cmd, response.res, result);
-        response.res = 0;
-        return true;
-    }
-    catch (const TcpClientException& err)
-    {
-        ROS_ERROR("%s", err.what());
-        response.res = -1;
-        return false;
-    }
-}
-
-bool CR5Robot::closeGripper(dobot_bringup::OpenGripper::Request& request, 
-                            dobot_bringup::OpenGripper::Response& response) 
-{
-    try
-    {
-        // commander_->setHoldRegs(0,1000,3,"{2304,255,65440}");
-        response.res = 0;
         return true;
     }
     catch (const TcpClientException& err)
