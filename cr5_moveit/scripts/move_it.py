@@ -2,8 +2,9 @@
 
 # Python 2/3 compatibility imports
 from __future__ import print_function
-from enum import auto
+from enum import Flag, auto
 import time
+from numpy import full
 from six.moves import input
 from dobot_bringup.srv import OpenGripper, OpenGripperRequest, OpenGripperResponse
 
@@ -161,7 +162,7 @@ def main():
         print("")
 
         tutorial = MoveGroupPythonInterfaceTutorial()
-        
+
         rospy.wait_for_service('/dobot_bringup/srv/OpenGripper')
         gripper=rospy.ServiceProxy('/dobot_bringup/srv/OpenGripper', OpenGripper)
         action = 0
@@ -175,43 +176,47 @@ def main():
             else:
                 action = full_seq[0]
                 full_seq.pop(0)
+                if len(full_seq) == 0:
+                    full_seq = [0,1,2,3,1,4,5,6,0]
+                    auto = False
+                    
 
             if action == 0:
                 print("Going to home position")
                 tutorial.go_to_joint_state(0,0,0,0,0,0)
-                time.sleep(1)
+
             elif action == 1:
                 print("Going to pre-pick up location")
                 tutorial.go_to_joint_state(1.535576324783635, 0.6528407592387284, 1.8244286517350827, -0.9059237351286105, -1.5703469509015602, -0.03609090798175925)
-                time.sleep(1)
+
             elif action == 2:
                 print("Going to pick up location")
                 tutorial.go_to_joint_state(1.5358207555052579, 1.2316446394547869, 1.6934242266459474, -1.3537928411456268, -1.5704520798429962, -0.035934519782196646)
-                time.sleep(1)
+
             elif action == 3:
                 print("Picking up")
                 request = OpenGripperRequest(force=20,position=GRIPPER_CLOSE)
                 response = OpenGripperResponse(res=-4004)
-                while response.res != 0: 
+                while response.res != 0:
                     response = gripper.call(request)
                     print(response.res)
-                    time.sleep(1)
+
             elif action == 4:
                 print("Going to pre-dropoff")
                 tutorial.go_to_joint_state(-1.8806789241548443, 0.0014316995568454856, 1.0375469496416603, 0.5324535266447842, -1.5708003342934636, -0.310213436218866)
-                time.sleep(1)
+
             elif action == 5:
                 print("Going to dropoff")
                 tutorial.go_to_joint_state(-1.8808554838217253, -0.11025035833231106, 1.5802745165258427, 0.10133884138242513, -1.5710548507487456, -0.3101776022004534)
-                time.sleep(1)
+
             elif action ==6:
                 print("Dropping off")
                 request = OpenGripperRequest(force=20,position=GRIPPER_OPEN)
                 response = OpenGripperResponse(res=-4004)
-                while response.res != 0: 
+                while response.res != 0:
                     response = gripper.call(request)
                     print(response.res)
-                    time.sleep(1)
+
             elif action ==9:
                 return
 
